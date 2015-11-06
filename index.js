@@ -89,7 +89,12 @@ module.exports = function replicator(db, options) {
   function parseLogs(remote, remote_logs, host, port) {
 
     var ops = [];
-    var count = remote_logs.length;
+    var remote_peers = Object.keys(remote_logs);
+    var count = remote_peers.length;
+
+    if (count === 0) {
+      remote.destroy();
+    }
 
     //
     // write the data and end the converation.
@@ -97,11 +102,11 @@ module.exports = function replicator(db, options) {
     function write() {
       batch.call(db, ops, function(err) {
         if (err) return db.emit('error', err);
-        //if (!--count) remote.destroy();
+        if (!--count) remote.destroy();
       });
     }
 
-    Object.keys(remote_logs).forEach(function(remote_peer) {
+    remote_peers.forEach(function(remote_peer) {
       Object.keys(remote_logs[remote_peer]).forEach(function(remote_logkey) {
 
         var remote_log = remote_logs[remote_peer][remote_logkey];
